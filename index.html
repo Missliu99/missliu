@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我是识字小能手 - 通关挑战</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            overflow: hidden; /* 防止烟花特效出现滚动条 */
+        }
+
+        #app {
+            width: 90%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            position: relative;
+            z-index: 10; /* 确保UI在烟花上方 */
+            text-align: center;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s ease;
+            width: 100%;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 封面页 */
+        h1 {
+            font-size: 38px;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 144, 226, 0.6);
+        }
+
+        /* 游戏页 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .pinyin-card {
+            background: #f0f8ff;
+            border: 3px dashed #4a90e2;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        #pinyin-text {
+            font-size: 42px;
+            color: #333;
+            letter-spacing: 2px;
+            font-family: 'Times New Roman', serif;
+        }
+
+        #options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #b0c4de;
+            padding: 15px;
+            font-size: 28px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: #333;
+            outline: none;
+        }
+
+        .option-btn:hover {
+            background: #f0f8ff;
+            border-color: #4a90e2;
+        }
+
+        .option-btn.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            transform: scale(1.02);
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        #feedback-text {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        /* 过关页 */
+        #level-pass-screen h2 {
+            font-size: 36px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        
+        #level-pass-screen p {
+            font-size: 20px;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
+        /* 结算页 */
+        #result-screen h2 {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #ff6b6b;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .result-score-text {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .grade-box {
+            font-size: 80px;
+            font-weight: bold;
+            margin: 10px 0 30px;
+            line-height: 1;
+        }
+        
+        .grade-S { color: #ffcc00; text-shadow: 0 0 20px rgba(255,204,0,0.5); }
+        .grade-A { color: #ff6b6b; }
+        .grade-B { color: #4a90e2; }
+        .grade-C { color: #a8edea; text-shadow: 1px 1px 1px #666; }
+        .grade-D { color: #888; }
+
+        /* 烟花 Canvas */
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 烟花画布 -->
+    <canvas id="fireworks-canvas"></canvas>
+
+    <div id="app">
+        <!-- 封面页 -->
+        <div id="cover-screen" class="screen active">
+            <h1>我是识字小能手</h1>
+            <p class="subtitle">共3大关卡，看看你能拿什么评级？</p>
+            <button class="btn" id="start-btn">开始挑战</button>
+        </div>
+
+        <!-- 游戏页 -->
+        <div id="game-screen" class="screen">
+            <div class="header">
+                <div>当前：第 <span id="current-level">1</span> 关 / 共 3 关</div>
+                <div>进度：<span id="current-q">1</span> / <span id="level-total-q">15</span></div>
+            </div>
+            <div class="pinyin-card">
+                <h2 id="pinyin-text">kuān guǎng</h2>
+            </div>
+            <div id="options-container">
+                <!-- 选项按钮由 JS 生成 -->
+            </div>
+            <div id="feedback-text"></div>
+        </div>
+
+        <!-- 过关过渡页 -->
+        <div id="level-pass-screen" class="screen">
+            <h2 id="pass-title">第一关通过！</h2>
+            <p>你真厉害，准备进入下一关吧！</p>
+            <button class="btn" id="next-level-btn">继续挑战</button>
+        </div>
+
+        <!-- 最终结算页 -->
+        <div id="result-screen" class="screen">
+            <h2>🎉 你真棒！🎉</h2>
+            <p class="result-score-text">你总共答对了 <span id="final-correct">0</span> / <span id="final-total">46</span> 题</p>
+            <div class="grade-box" id="grade-text">S</div>
+            <button class="btn" id="restart-btn">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 题库数据：分三关 ---
+        const levelsData = [
+            // 第一关 (15题)
+            [
+                { pinyin: "liǎng tiáo", correct: "两条", options: ["两条", "凉条", "粮条"] },
+                { pinyin: "nǎ lǐ", correct: "哪里", options: ["哪里", "那里", "哪理"] },
+                { pinyin: "nà biān", correct: "那边", options: ["那边", "哪边", "那变"] },
+                { pinyin: "kuān guǎng", correct: "宽广", options: ["宽广", "宽大", "扩广"] },
+                { pinyin: "hái zi", correct: "孩子", options: ["孩子", "骇子", "孙子"] },
+                { pinyin: "mā ma", correct: "妈妈", options: ["妈妈", "码码", "吗吗"] },
+                { pinyin: "tā men", correct: "他们", options: ["他们", "她们", "它们"] },
+                { pinyin: "kàn jiàn", correct: "看见", options: ["看见", "砍见", "看建"] },
+                { pinyin: "wǒ men", correct: "我们", options: ["我们", "咱们", "我门"] },
+                { pinyin: "xuě bái", correct: "雪白", options: ["雪白", "血白", "鳕白"] },
+                { pinyin: "guò qù", correct: "过去", options: ["过去", "过起", "过却"] },
+                { pinyin: "shén me", correct: "什么", options: ["什么", "什吗", "神么"] },
+                { pinyin: "liǎng gè", correct: "两个", options: ["两个", "两各", "俩个"] },
+                { pinyin: "kuān dà", correct: "宽大", options: ["宽大", "宽太", "觉大"] },
+                { pinyin: "duǎn xiǎo", correct: "短小", options: ["短小", "知小", "矮小"] }
+            ],
+            // 第二关 (15题)
+            [
+                { pinyin: "chéng zhǎng", correct: "成长", options: ["成长", "成张", "城长"] },
+                { pinyin: "yì qǐ", correct: "一起", options: ["一起", "一启", "一企"] },
+                { pinyin: "hǎi yáng", correct: "海洋", options: ["海洋", "海羊", "每洋"] },
+                { pinyin: "xǔ duō", correct: "许多", options: ["许多", "许冬", "需多"] },
+                { pinyin: "gōng zuò", correct: "工作", options: ["工作", "工做", "公作"] },
+                { pinyin: "bàn fǎ", correct: "办法", options: ["办法", "办发", "半法"] },
+                { pinyin: "tài yáng", correct: "太阳", options: ["太阳", "大阳", "太杨"] },
+                { pinyin: "tiān kōng", correct: "天空", options: ["天空", "天宫", "田空"] },
+                { pinyin: "dōng tiān", correct: "冬天", options: ["冬天", "东天", "冬夭"] },
+                { pinyin: "huā duǒ", correct: "花朵", options: ["花朵", "花剁", "化朵"] },
+                { pinyin: "chí zi", correct: "尺子", options: ["尺子", "尽子", "迟子"] },
+                { pinyin: "jiāng hé", correct: "江河", options: ["江河", "江可", "工河"] },
+                { pinyin: "tián dì", correct: "田地", options: ["田地", "田弟", "天田"] },
+                { pinyin: "nǐ men", correct: "你们", options: ["你们", "你门", "您们"] },
+                { pinyin: "shàng shēng", correct: "上升", options: ["上升", "上生", "上声"] }
+            ],
+            // 第三关 (16题)
+            [
+                { pinyin: "xiāng lián", correct: "相连", options: ["相连", "相联", "香连"] },
+                { pinyin: "rú guǒ", correct: "如果", options: ["如果", "如过", "如裹"] },
+                { pinyin: "yǐ jīng", correct: "已经", options: ["已经", "己经", "巳经"] },
+                { pinyin: "gào bié", correct: "告别", options: ["告别", "告另", "搞别"] },
+                { pinyin: "chū fā", correct: "出发", options: ["出发", "出法", "初发"] },
+                { pinyin: "shuǐ guǒ", correct: "水果", options: ["水果", "水裹", "氺果"] },
+                { pinyin: "dǎn zi", correct: "胆子", options: ["胆子", "担子", "但子"] }, /* 已修正 dǎn */
+                { pinyin: "dù zi", correct: "肚子", options: ["肚子", "杜子", "度子"] },  /* 已修正 dù */
+                { pinyin: "nà lǐ", correct: "那里", options: ["那里", "哪里", "那理"] },
+                { pinyin: "zhī shi", correct: "知识", options: ["知识", "知实", "只识"] },
+                { pinyin: "zì jǐ", correct: "自己", options: ["自己", "自已", "自巳"] },
+                { pinyin: "dòng wù", correct: "动物", options: ["动物", "洞物", "动务"] },
+                { pinyin: "qīng qīng", correct: "轻轻", options: ["轻轻", "清清", "青轻"] },
+                { pinyin: "yīn zhuǎn qíng", correct: "阴转晴", options: ["阴转晴", "阴转情", "因转晴"] },
+                { pinyin: "yǔ jiā xuě", correct: "雨夹雪", options: ["雨夹雪", "雨加雪", "两夹雪"] },
+                { pinyin: "sì hǎi wéi jiā", correct: "四海为家", options: ["四海为家", "四海为佳", "四和为家"] }
+            ]
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentLevelIndex = 0;
+        let currentQIndex = 0;
+        let globalScore = 0; 
+        let totalQuestions = 0;
+        let canClick = true;
+
+        // DOM 元素
+        const coverScreen = document.getElementById('cover-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const levelPassScreen = document.getElementById('level-pass-screen');
+        const resultScreen = document.getElementById('result-screen');
+        
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackText = document.getElementById('feedback-text');
+
+        // 初始化总题数
+        levelsData.forEach(level => totalQuestions += level.length);
+
+        // 打乱数组
+        function shuffleArray(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // 开始游戏
+        function startGame() {
+            currentLevelIndex = 0;
+            currentQIndex = 0;
+            globalScore = 0;
+            
+            // 打乱每一关的题目顺序
+            levelsData.forEach(level => shuffleArray(level));
+
+            coverScreen.classList.remove('active');
+            levelPassScreen.classList.remove('active');
+            resultScreen.classList.remove('active');
+            gameScreen.classList.add('active');
+            
+            loadQuestion();
+        }
+
+        // 加载题目
+        function loadQuestion() {
+            canClick = true;
+            feedbackText.textContent = '';
+            
+            const currentLevelData = levelsData[currentLevelIndex];
+            const currentQ = currentLevelData[currentQIndex];
+            
+            document.getElementById('current-level').textContent = currentLevelIndex + 1;
+            document.getElementById('current-q').textContent = currentQIndex + 1;
+            document.getElementById('level-total-q').textContent = currentLevelData.length;
+            
+            document.getElementById('pinyin-text').textContent = currentQ.pinyin;
+            
+            optionsContainer.innerHTML = '';
+            
+            // 打乱选项
+            const shuffledOptions = shuffleArray([...currentQ.options]);
+            
+            shuffledOptions.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => checkAnswer(btn, option, currentQ.correct);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // 检查答案
+        function checkAnswer(btn, selected, correct) {
+            if (!canClick) return;
+            canClick = false;
+
+            if (selected === correct) {
+                btn.classList.add('correct');
+                feedbackText.textContent = '✔️ 答对啦！太棒了！';
+                feedbackText.style.color = '#28a745';
+                globalScore++;
+            } else {
+                btn.classList.add('wrong');
+                feedbackText.textContent = `❌ 正确答案是：${correct}`;
+                feedbackText.style.color = '#dc3545';
+                
+                // 标出正确答案
+                Array.from(optionsContainer.children).forEach(b => {
+                    if (b.textContent === correct) {
+                        b.classList.add('correct');
+                    }
+                });
+            }
+
+            // 延迟进入下一步
+            setTimeout(() => {
+                currentQIndex++;
+                
+                if (currentQIndex < levelsData[currentLevelIndex].length) {
+                    // 当前关卡还有题目
+                    loadQuestion();
+                } else {
+                    // 当前关卡结束
+                    if (currentLevelIndex < levelsData.length - 1) {
+                        // 进入下一关
+                        currentLevelIndex++;
+                        currentQIndex = 0;
+                        showLevelPass();
+                    } else {
+                        // 所有关卡结束
+                        endGame();
+                    }
+                }
+            }, 1500);
+        }
+
+        // 显示过关页
+        function showLevelPass() {
+            gameScreen.classList.remove('active');
+            levelPassScreen.classList.add('active');
+            
+            const passedLevel = currentLevelIndex; // 刚刚通过的是上一关
+            document.getElementById('pass-title').textContent = `第 ${passedLevel} 关通过！`;
+            
+            // 手动绑定一次事件（防止多次绑定，使用 onclick）
+            document.getElementById('next-level-btn').onclick = () => {
+                levelPassScreen.classList.remove('active');
+                gameScreen.classList.add('active');
+                loadQuestion();
+            };
+        }
+
+        // 结束游戏，计算评分
+        function endGame() {
+            gameScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+            
+            const accuracy = globalScore / totalQuestions;
+            let grade = 'D';
+            let colorClass = 'grade-D';
+
+            if (accuracy >= 0.95) {
+                grade = 'S';
+                colorClass = 'grade-S';
+            } else if (accuracy >= 0.85) {
+                grade = 'A';
+                colorClass = 'grade-A';
+            } else if (accuracy >= 0.75) {
+                grade = 'B';
+                colorClass = 'grade-B';
+            } else if (accuracy >= 0.60) {
+                grade = 'C';
+                colorClass = 'grade-C';
+            }
+
+            document.getElementById('final-correct').textContent = globalScore;
+            document.getElementById('final-total').textContent = totalQuestions;
+            
+            const gradeBox = document.getElementById('grade-text');
+            gradeBox.textContent = grade;
+            gradeBox.className = 'grade-box ' + colorClass;
+
+            // 触发烟花
+            startFireworks();
+        }
+
+        // 按钮事件
+        document.getElementById('start-btn').onclick = startGame;
+        document.getElementById('restart-btn').onclick = () => {
+            stopFireworks(); // 停止烟花
+            startGame();
+        };
+
+
+        // ==========================================
+        // 🌟 烟花特效代码 (Canvas)
+        // ==========================================
+        const canvas = document.getElementById('fireworks-canvas');
+        const ctx = canvas.getContext('2d');
+        let fireworksAnimationId;
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.friction = 0.95;
+                this.gravity = 0.15;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.02 + 0.015;
+                this.size = Math.random() * 2 + 1;
+            }
+            update() {
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+            }
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function createFirework() {
+            // 随机位置和颜色
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height * 0.6; // 集中在屏幕上半部分
+            const hue = Math.random() * 360;
+            const color1 = `hsl(${hue}, 100%, 60%)`;
+            const color2 = `hsl(${hue + 30}, 100%, 70%)`;
+
+            for (let i = 0; i < 60; i++) {
+                particles.push(new Particle(x, y, Math.random() > 0.5 ? color1 : color2));
+            }
+        }
+
+        function animateFireworks() {
+            // 拖尾效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 随机发射烟花
+            if (Math.random() < 0.05) {
+                createFirework();
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            fireworksAnimationId = requestAnimationFrame(animateFireworks);
+        }
+
+        function startFireworks() {
+            // 清空画布，背景设为黑色（半透明便于看清烟花，也可以设为白底）
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 连续放几个大的
+            for(let i=0; i<3; i++) {
+                setTimeout(createFirework, i * 300);
+            }
+            
+            animateFireworks();
+        }
+
+        function stopFireworks() {
+            cancelAnimationFrame(fireworksAnimationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = [];
+        }
+
+    </script>
+</body>
+</html>
